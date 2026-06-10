@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIRAGE • URL Shortener</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#070412;
+  --panel:#110b29;
+  --panel-2:#19103b;
+  --accent:#a855f7;
+  --accent-soft:#c084fc;
+  --text:#f5f3ff;
+  --muted:#d8b4fe;
+  --border:#2e1f5e;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  font-family:Inter,system-ui,sans-serif;
+  background:radial-gradient(1200px 600px at top,#110b29,#070412);
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+/* BACKGROUND (SHATTERED GLASS) */
+#glass-canvas{position:fixed;inset:0;z-index:-2}
+.glow{
+  position:fixed;
+  inset:-20%;
+  background:radial-gradient(circle at top,rgba(168,85,247,.18),transparent 60%);
+  z-index:-1;
+}
+
+/* LAYOUT */
+.wrap{
+  max-width:1000px;
+  margin:auto;
+  padding:60px 20px;
+  animation:fadeUp .8s cubic-bezier(.22,1,.36,1);
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:none}
+}
+
+header{text-align:center;margin-bottom:40px}
+h1{
+  font-family:"Space Grotesk",sans-serif;
+  font-size:48px;
+  letter-spacing:.2em;
+  margin:0;
+  color:var(--text);
+  text-shadow:0 0 30px rgba(255,255,255,0.2), 0 0 50px rgba(168,85,247,.45);
+}
+header p{color:var(--muted); letter-spacing: 0.05em;}
+
+hr{
+  border:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--panel-2),transparent);
+  margin:36px 0;
+}
+
+/* CARD */
+.card{
+  background:linear-gradient(180deg,var(--panel),#0d0720);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:26px;
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+.card:hover{transform:translateY(-6px)}
+
+.service{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.badge{
+  background:linear-gradient(180deg,var(--accent),#7e22ce);
+  padding:6px 14px;
+  border-radius:999px;
+  font-size:12px;
+}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:14px 20px;
+  border-radius:16px;
+  border:0;
+  font-weight:600;
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(180deg,var(--accent),#7e22ce);
+  transition:.25s ease;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 40px rgba(168,85,247,.4);
+}
+.btn.secondary{
+  background:#0d0720;
+  border:1px solid var(--border);
+}
+
+/* FORM */
+label{display:block;margin-top:20px;color:var(--muted);font-size:14px}
+input,select{
+  width:100%;
+  margin-top:8px;
+  padding:15px 18px;
+  border-radius:16px;
+  background:#080414;
+  border:1px solid var(--border);
+  color:white;
+  outline:none;
+}
+input:focus,select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(168,85,247,.25);
+}
+
+/* TABS */
+.tabs{
+  display:flex;
+  margin-top:18px;
+  background:#080414;
+  border-radius:16px;
+  overflow:hidden;
+}
+.tab{
+  flex:1;
+  padding:14px;
+  text-align:center;
+  cursor:pointer;
+  color:var(--muted);
+}
+.tab.active{
+  background:#0d0720;
+  color:white;
+}
+
+/* RESULT */
+.result{
+  display:none;
+  margin-top:24px;
+}
+.result.show{display:block}
+.result pre{
+  background:#080414;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  overflow:auto;
+}
+
+/* NOTIFICATION */
+.notification{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  background:#080414;
+  border:1px solid var(--border);
+  padding:14px 18px;
+  border-radius:16px;
+  opacity:0;
+  transform:translateY(10px);
+  transition:.3s ease;
+}
+.notification.show{opacity:1;transform:none}
+</style>
+</head>
+
+<body>
+<canvas id="glass-canvas"></canvas>
+<div class="glow"></div>
+
+<!-- HOME -->
+<div class="wrap" id="home">
+<header>
+  <h1>MIRAGE URL-SHORT</h1>
+  <p>Reflecting Links into Shorter Perspectives</p>
+</header>
+
+<hr>
+
+<div class="card" onclick="openService()">
+  <div class="service">
+    <h3>is.gd</h3>
+    <span class="badge">Recommended</span>
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:34px">
+  <a class="btn" href="https://discord.gg/nDjVHbACCM" target="_blank">
+    Join Discord Community
+  </a>
+</div>
+</div>
+
+<!-- SERVICE -->
+<div class="wrap" id="service" style="display:none">
+<button class="btn secondary" onclick="goBack()">← Back</button>
+
+<div class="card" style="margin-top:20px">
+<h3>is.gd</h3>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(true)">Shorten</div>
+  <div class="tab" onclick="switchTab(false)">Unshorten</div>
+</div>
+
+<div id="shorten">
+<label>Select Link Type</label>
+<select id="typeSelect">
+  <option value="profile">Profile</option>
+  <option value="private">Private Server</option>
+  <option value="group">Group</option>
+</select>
+
+<label>Enter Your Link</label>
+<input id="urlInput" placeholder="https://www.roblox.com/...">
+
+<label>Custom Slug (Optional)</label>
+<input id="slugInput" placeholder="your-custom-slug">
+
+<button class="btn" style="margin-top:24px" onclick="shorten()">Generate Shortened Link</button>
+</div>
+
+<div id="unshorten" style="display:none">
+<label>Shortened URL</label>
+<input id="shortInput" placeholder="https://is.gd/xxxx">
+<button class="btn" style="margin-top:24px" onclick="expand()">Unshorten URL</button>
+</div>
+
+<div class="result" id="result">
+<pre id="resultText"></pre>
+<button class="btn secondary" onclick="copy()">Copy</button>
+</div>
+</div>
+</div>
+
+<script>
+const home=document.getElementById('home');
+const service=document.getElementById('service');
+const result=document.getElementById('result');
+const resultText=document.getElementById('resultText');
+
+function openService(){
+  home.style.display='none';
+  service.style.display='block';
+}
+function goBack(){
+  service.style.display='none';
+  home.style.display='block';
+  result.classList.remove('show');
+}
+function switchTab(shorten){
+  document.querySelectorAll('.tab')[0].classList.toggle('active',shorten);
+  document.querySelectorAll('.tab')[1].classList.toggle('active',!shorten);
+  document.getElementById('shorten').style.display=shorten?'block':'none';
+  document.getElementById('unshorten').style.display=shorten?'none':'block';
+  result.classList.remove('show');
+}
+
+/* SHORTEN */
+async function shorten(){
+  const realUrl=urlInput.value.trim();
+  const type=typeSelect.value;
+  if(!realUrl) return notify('Please enter a URL');
+
+  resultText.textContent='Generating...';
+  result.classList.add('show');
+
+  try{
+    const r=await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(realUrl)}`);
+    const d=await r.json();
+    if(d.errorcode) throw 0;
+
+    let masked='';
+    if(type==='profile'){
+      masked='https*:*//www.roblox.com/users/3095250/profile';
+    }else if(type==='private'){
+      masked='https*:*//www.roblox.com/games/142823291/Murder-Mystery-2?privateServerLinkCode=817627685225118516108207578414';
+    }else if(type==='group'){
+      masked='https*:*//www.roblox.com/communities/123/A-random-group-test-thingy#!/about';
+    }
+
+    resultText.textContent=`[${masked}](${d.shorturl})`;
+
+  }catch{
+    resultText.textContent='Failed to shorten link';
+  }
+}
+
+/* UNSHORTEN */
+async function expand(){
+  const s=shortInput.value.trim();
+  if(!s) return notify('Please enter a URL');
+
+  resultText.textContent='Resolving...';
+  result.classList.add('show');
+
+  try{
+    const r=await fetch(`https://is.gd/forward.php?format=json&shorturl=${encodeURIComponent(s)}`);
+    const d=await r.json();
+    resultText.textContent=d.url||'Failed';
+  }catch{
+    resultText.textContent='Failed to resolve link';
+  }
+}
+
+function copy(){
+  navigator.clipboard.writeText(resultText.textContent);
+  notify('Copied to clipboard');
+}
+function notify(msg){
+  const n=document.createElement('div');
+  n.className='notification';
+  n.textContent=msg;
+  document.body.appendChild(n);
+  setTimeout(()=>{n.classList.add('show');setTimeout(()=>n.remove(),2200)},10);
+}
+
+/* INTERACTIVE SHATTERED GLASS BACKGROUND WITH GLINT ANIMATION */
+const canvas = document.getElementById('glass-canvas'), ctx = canvas.getContext('2d');
+let W, H, shards = [];
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+for(let i = 0; i < 45; i++) {
+  shards.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    size: 8 + Math.random() * 15,
+    speedY: 0.4 + Math.random() * 1.2,
+    speedX: (Math.random() - 0.5) * 0.4,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.015,
+    baseOpacity: 0.12 + Math.random() * 0.2,
+    glintSpeed: 0.02 + Math.random() * 0.03,
+    glintPhase: Math.random() * Math.PI
+  });
+}
+
+(function drawGlass() {
+  ctx.clearRect(0, 0, W, H);
+  
+  shards.forEach(s => {
+    s.glintPhase += s.glintSpeed;
+    // Efecto dinámico de destello/brillo usando Math.sin
+    let currentOpacity = s.baseOpacity + Math.sin(s.glintPhase) * 0.08;
+    
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.angle);
+    
+    ctx.beginPath();
+    ctx.moveTo(0, -s.size);
+    ctx.lineTo(s.size * 0.6, s.size * 0.5);
+    ctx.lineTo(-s.size * 0.6, s.size * 0.5);
+    ctx.closePath();
+    
+    // Tonalidad de cristal violeta translúcido
+    ctx.fillStyle = `rgba(216, 180, 254, ${currentOpacity})`;
+    ctx.fill();
+    
+    // Líneas de corte/bordes brillantes
+    ctx.strokeStyle = `rgba(255, 255, 255, ${currentOpacity + 0.15})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    ctx.restore();
+    
+    s.y += s.speedY;
+    s.x += s.speedX;
+    s.angle += s.spin;
+    
+    if(s.y > H + 20) {
+      s.y = -20;
+      s.x = Math.random() * W;
+    }
+  });
+  
+  requestAnimationFrame(drawGlass);
+})();
+</script>
+</body>
+</html>
